@@ -15,7 +15,7 @@ module link_table_mamager#(
 
 	output reg dout_valid,
 	input dout_busy,
-	output [DATA_WIDTH - 1:0] dout_data,
+	output reg [DATA_WIDTH - 1:0] dout_data,
 
 	output reg [ADDR_WIDTH - 1:0]ram_addr,
 	input [DATA_WIDTH - 1:0]ram_read_data,
@@ -145,12 +145,16 @@ always @ (*) begin
 				next_mode = REWR;
 			end else if ((lock_type == APPE || lock_type == DELE) && (this_node_num == lock_node - 1'b1)) begin
 				next_mode = REWR;
+			end else if (is_fatal) begin
+				next_mode = BACK;
 			end else begin
 				next_mode = LINK;
 			end
 		end
 		REWR:begin
 			if (is_rewrite_finish) begin
+				next_mode = BACK;
+			end else if (is_fatal) begin
 				next_mode = BACK;
 			end else begin
 				next_mode = REWR;
@@ -235,7 +239,11 @@ always @ (posedge clk or negedge rst_n) begin
 				end else if (rewr_count < 3'd5) begin
 					ram_addr <= ram_addr + 1'b1;
 				end else if (rewr_count == 3'd5) begin
-					ram_addr <= last_point_addr;
+					if (last_point_addr < BASE_ADDR) begin
+						ram_addr <= last_point_addr;
+					end else begin
+						ram_addr <= last_point_addr + 1'b1;
+					end
 				end
 			end
 			DELE:begin
@@ -249,7 +257,11 @@ always @ (posedge clk or negedge rst_n) begin
 			default : ram_addr <= ram_addr;
 		endcase
 	end else if (mode == LINK) begin
-		ram_addr <= ram_read_data + 1'b1;
+		if (ram_addr < BASE_ADDR) begin
+			ram_addr <= ram_read_data;
+		end else begin
+			ram_addr <= ram_read_data + 1'b1;
+		end
 	end
 end
 
@@ -309,6 +321,28 @@ always @ (posedge clk or negedge rst_n) begin
 		order_busy <= 1'b1;
 	end else if (next_mode == REST) begin
 		order_busy <= 1'b0;
+	end
+end
+
+always @ (posedge clk or negedge rst_n) begin
+	if (~rst_n) begin
+		dout_valid <= 'b0;
+	end else if (mode == BACK) begin
+		dout_valid <= 1'b1;
+	end else if (is_dout) begin
+		dout_valid <= 1'b0;
+	end
+end
+
+always @ (posedge clk or negedge rst_n) begin
+	if (~rst_n) begin
+		dout_data <= 'b0;
+	end else if (is_fatal) begin
+		dout_data <= 'b0;
+	end else if (lock_type != READ) begin
+		dout_data <= 1'b1;
+	end else if (lock_type == READ) begin
+		dout_data <= ram_read_data;
 	end
 end
 

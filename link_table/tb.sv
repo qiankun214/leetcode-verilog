@@ -51,6 +51,18 @@ initial begin
 	end
 end
 
+task append(int table_num,int place,logic[DATA_WIDTH - 1:0]data);
+	order_type = APPE;
+	order_table = table_num;
+	order_node = place;
+	order_data = data;
+	order_valid = 1'b1;
+	do begin
+		@(posedge clk);
+	end while(order_busy == 1'b1);
+	order_valid = 1'b0;
+endtask : append
+
 initial begin
 	
 	order_valid = 'b0;
@@ -58,6 +70,7 @@ initial begin
 	order_table = 'b0;
 	order_node = 'b0;
 	order_data = 'b0;
+	dout_busy = 1'b0;
 
 	rst_n = 1'b1;
 	for (int i = 0; i < 2 ** ADDR_WIDTH; i++) begin
@@ -67,17 +80,24 @@ initial begin
 	#1 rst_n = 1'b1;
 
 	@(posedge clk);
-	order_type = APPE;
-	order_table = 3;
-	order_node = 1;
-	order_data = (DATA_WIDTH)'(111);
-	order_valid = 1'b1;
+	append(3,1,111);
+	append(3,2,112);
+	append(3,1,113);
 
-	@(posedge clk);
-	order_valid = 1'b0;
+	// @(posedge clk);
+	// order_valid = 1'b0;
 
-	#200;
-	$stop;
+	#3000;
+	// $stop;
+end
+
+initial begin
+	// for (int i = 0; i < 2; i++) begin
+		// while begin
+			// @(posedge cl)
+		// end
+	// end
+
 end
 
 endmodule
