@@ -87,6 +87,18 @@ task read(int table_num,int place);
 	order_valid = 1'b0;
 endtask : read
 
+task write(int table_num,int place,logic [DATA_WIDTH - 1:0]data);
+	order_type = CHAG;
+	order_table = table_num;
+	order_node = place;
+	order_data = data;
+	order_valid = 1'b1;
+	do begin
+		@(posedge clk);
+	end while(order_busy == 1'b1);
+	order_valid = 1'b0;
+endtask : write
+
 initial begin
 	
 	order_valid = 'b0;
@@ -107,9 +119,10 @@ initial begin
 	append(3,1,111);
 	append(3,2,112);
 	append(3,3,113);
-	delete(3,3);
+	// delete(3,3);
 	append(1,3,20);
-	read(3,2);
+	read(3,3);
+	write(3,3,2);
 
 	// @(posedge clk);
 	// order_valid = 1'b0;

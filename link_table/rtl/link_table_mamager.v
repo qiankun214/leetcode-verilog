@@ -295,7 +295,7 @@ always @ (posedge clk or negedge rst_n) begin
 				end
 			end
 			CHAG:begin
-				if (rewr_count < 3'd2) begin
+				if (rewr_count < 3'd1) begin
 					ram_write_req <= 1'b1;
 				end else begin
 					ram_write_req <= 1'b0;
@@ -310,6 +310,8 @@ always @ (posedge clk or negedge rst_n) begin
 			end
 			default : ram_write_req <= 1'b0;
 		endcase
+	end else if ((next_mode == REWR) && (lock_type == CHAG)) begin
+		ram_write_req <= 1'b1;
 	end
 end
 
