@@ -19,3 +19,4 @@ add wave -position end  sim:/tb/ut/u_link/this_point_addr
 add wave -position end  sim:/tb/ut/dout_valid
 add wave -position end  sim:/tb/ut/dout_busy
 add wave -position end  sim:/tb/ut/dout_data
+add wave -position end  sim:/tb/ut/u_ram/memory

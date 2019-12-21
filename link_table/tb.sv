@@ -63,6 +63,18 @@ task append(int table_num,int place,logic[DATA_WIDTH - 1:0]data);
 	order_valid = 1'b0;
 endtask : append
 
+task delete(int table_num,int place);
+	order_type = DELE;
+	order_table = table_num;
+	order_node = place;
+	order_data = 'b0;
+	order_valid = 1'b1;
+	do begin
+		@(posedge clk);
+	end while(order_busy == 1'b1);
+	order_valid = 1'b0;
+endtask : delete
+
 initial begin
 	
 	order_valid = 'b0;
@@ -82,7 +94,8 @@ initial begin
 	@(posedge clk);
 	append(3,1,111);
 	append(3,2,112);
-	append(3,1,113);
+	append(3,3,113);
+	// delete(3,3);
 
 	// @(posedge clk);
 	// order_valid = 1'b0;

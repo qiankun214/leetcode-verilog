@@ -61,7 +61,7 @@ always @ (posedge clk or negedge rst_n) begin
 end
 
 reg [ADDR_WIDTH - 1:0]link_count;
-wire [ADDR_WIDTH - 1:0]this_node_num = link_count;
+wire [ADDR_WIDTH - 1:0]this_node_num = {1'b0,link_count[ADDR_WIDTH - 1:1]};
 always @ (posedge clk or negedge rst_n) begin
 	if (~rst_n) begin
 		link_count <= 'b0;
@@ -87,7 +87,7 @@ always @ (posedge clk or negedge rst_n) begin
 		rewr_start_count <= 1'b0;
 	end else if ((next_mode == REWR) && (lock_type != APPE)) begin
 		rewr_start_count <= 1'b1;
-	end else if ((next_mode == REWR) && (lock_type == APPE) && (ram_read_data == 'b0) && (last_addr >= BASE_ADDR)) begin
+	end else if ((next_mode == REWR) && (lock_type == APPE) && (ram_read_data == 'b0) && (last_addr >= BASE_ADDR) && (last_addr[1:0] == 'b0)) begin
 		rewr_start_count <= 1'b1;
 	end else if (mode == BACK) begin
 		rewr_start_count <= 1'b0;
@@ -100,6 +100,8 @@ always @ (posedge clk or negedge rst_n) begin
 		rewr_count <= 'b0;
 	end else if (rewr_start_count && (mode == REWR)) begin
 		rewr_count <= rewr_count + 1'b1;
+	end else if (mode != REWR) begin
+		rewr_count <= 'b0;
 	end
 end
 
@@ -176,7 +178,11 @@ always @ (posedge clk or negedge rst_n) begin
 	if (~rst_n) begin
 		last_point_addr <= 'b0;
 	end else if ((mode == LINK) && (next_mode == REWR)) begin
-		last_point_addr <= ram_addr;
+		if (ram_addr < BASE_ADDR) begin
+			last_point_addr <= ram_addr;
+		end else begin
+			last_point_addr <= {ram_addr[ADDR_WIDTH - 1:2],2'b00};
+		end
 	end
 end
 always @ (posedge clk or negedge rst_n) begin
@@ -257,9 +263,7 @@ always @ (posedge clk or negedge rst_n) begin
 			default : ram_addr <= ram_addr;
 		endcase
 	end else if (mode == LINK) begin
-		if (ram_addr < BASE_ADDR) begin
-			ram_addr <= ram_read_data;
-		end else begin
+		if (link_count[0] == 1'b1) begin
 			ram_addr <= ram_read_data + 1'b1;
 		end
 	end
