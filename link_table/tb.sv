@@ -95,7 +95,8 @@ initial begin
 	append(3,1,111);
 	append(3,2,112);
 	append(3,3,113);
-	// delete(3,3);
+	delete(3,3);
+	append(1,3,20);
 
 	// @(posedge clk);
 	// order_valid = 1'b0;

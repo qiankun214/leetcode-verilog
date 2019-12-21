@@ -188,8 +188,10 @@ end
 always @ (posedge clk or negedge rst_n) begin
 	if (~rst_n) begin
 		this_point_addr <= 'b0;
-	end else if (rewr_start_count == 1'b0) begin
+	end else if ((lock_type == APPE) && (rewr_start_count == 1'b0)) begin
 		this_point_addr <= last_addr;
+	end else if ((lock_type == DELE) && (mode == REWR) && (rewr_count == 'b0)) begin
+		this_point_addr <= ram_read_data;
 	end
 end
 
@@ -256,7 +258,13 @@ always @ (posedge clk or negedge rst_n) begin
 				if (rewr_count == 'b0) begin
 					ram_addr <= ram_read_data;
 				end else if (rewr_count == 3'd1) begin
-					ram_addr <= last_point_addr;
+					ram_addr <= this_point_addr + 1'b1;
+				end else if (rewr_count == 3'd2) begin
+					if (last_point_addr < BASE_ADDR) begin
+						ram_addr <= last_point_addr;
+					end else begin
+						ram_addr <= last_point_addr + 1'b1;
+					end
 				end
 			end
 			CHAG,READ:ram_addr <= ram_addr + 1'b1;
@@ -281,11 +289,18 @@ always @ (posedge clk or negedge rst_n) begin
 					ram_write_req <= 1'b0;
 				end
 			end
-			DELE,CHAG:begin
+			CHAG:begin
 				if (rewr_count < 3'd2) begin
 					ram_write_req <= 1'b1;
 				end else begin
 					ram_write_req <= 1'b0;
+				end
+			end
+			DELE:begin
+				if ((rewr_count == 3'd0) || (rewr_count == 3'd3)) begin
+					ram_write_req <= 1'b1;
+				end else begin
+					ram_write_req <= 'b0;
 				end
 			end
 			default : ram_write_req <= 1'b0;
@@ -311,7 +326,13 @@ always @ (posedge clk or negedge rst_n) begin
 					ram_write_data <= this_point_addr;
 				end
 			end
-			DELE:ram_write_data <= 'b0;
+			DELE:begin
+				if (rewr_count == 3'd3) begin
+					ram_write_data <= ram_read_data;
+				end else begin
+					ram_write_data <= 'b0;
+				end
+			end
 			CHAG:ram_write_data <= lock_data;
 			default : ram_write_data <= 'b0;
 		endcase
