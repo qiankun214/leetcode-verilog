@@ -75,6 +75,18 @@ task delete(int table_num,int place);
 	order_valid = 1'b0;
 endtask : delete
 
+task read(int table_num,int place);
+	order_type = READ;
+	order_table = table_num;
+	order_node = place;
+	order_data = 'b0;
+	order_valid = 1'b1;
+	do begin
+		@(posedge clk);
+	end while(order_busy == 1'b1);
+	order_valid = 1'b0;
+endtask : read
+
 initial begin
 	
 	order_valid = 'b0;
@@ -97,6 +109,7 @@ initial begin
 	append(3,3,113);
 	delete(3,3);
 	append(1,3,20);
+	read(3,2);
 
 	// @(posedge clk);
 	// order_valid = 1'b0;

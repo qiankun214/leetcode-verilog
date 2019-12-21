@@ -116,7 +116,7 @@ always @ (posedge clk or negedge rst_n) begin
 		is_rewrite_finish <= 1'b1;
 	end else if ((lock_type == CHAG) && (rewr_count == 3'd2)) begin
 		is_rewrite_finish <= 1'b1;
-	end else if ((lock_type == READ) && (rewr_count == 3'd2)) begin
+	end else if ((lock_type == READ) && (rewr_count == 3'd1)) begin
 		is_rewrite_finish <= 1'b1;
 	end else begin
 		is_rewrite_finish <= 1'b0;
@@ -267,7 +267,12 @@ always @ (posedge clk or negedge rst_n) begin
 					end
 				end
 			end
-			CHAG,READ:ram_addr <= ram_addr + 1'b1;
+			CHAG:ram_addr <= ram_addr + 1'b1;
+			READ:begin
+				if (rewr_count < 1'b1) begin
+					ram_addr <= ram_addr + 1'b1;
+				end
+			end
 			default : ram_addr <= ram_addr;
 		endcase
 	end else if (mode == LINK) begin
@@ -352,10 +357,10 @@ end
 always @ (posedge clk or negedge rst_n) begin
 	if (~rst_n) begin
 		dout_valid <= 'b0;
-	end else if (mode == BACK) begin
-		dout_valid <= 1'b1;
 	end else if (is_dout) begin
 		dout_valid <= 1'b0;
+	end else if (mode == BACK) begin
+		dout_valid <= 1'b1;
 	end
 end
 
@@ -366,7 +371,7 @@ always @ (posedge clk or negedge rst_n) begin
 		dout_data <= 'b0;
 	end else if (lock_type != READ) begin
 		dout_data <= 1'b1;
-	end else if (lock_type == READ) begin
+	end else if ((lock_type == READ) && (mode == REWR) && (rewr_count == 4'd2)) begin
 		dout_data <= ram_read_data;
 	end
 end
